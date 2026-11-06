@@ -29,17 +29,21 @@ flowchart TD
         Chat["FastAPI RAG Engine (Pinecone + Groq + Gemini)"]
     end
 
-    Doc & Pat <--> Jitsi
-    Doc & Pat <--> Web
+    Doc <--> Jitsi
+    Pat <--> Jitsi
+    Doc <--> Web
+    Pat <--> Web
     Phar <--> Web
     Web <--> API
     Web <--> WS
     API <--> DB
-    Web -->|Audio Stream| API
-    API --> STT --> LLM --> DB
+    Web -->|"Audio Stream"| API
+    API --> STT
+    STT --> LLM
+    LLM --> DB
     Pat <--> Chat
-    Chat -->|Surge Detection >= X queries| WS
-    WS -->|Instant Stock Alert| Phar
+    Chat -->|"Surge Detection (>= X queries)"| WS
+    WS -->|"Instant Stock Alert"| Phar
 ```
 
 ---

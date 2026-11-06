@@ -36,15 +36,18 @@ flowchart TD
         M5["Module 5: pharmacy-alerts"]
     end
 
-    Doc & Pat <--> WS
-    Pat & Doc & Phar <--> Gateway
+    Doc <--> WS
+    Pat <--> WS
+    Pat <--> Gateway
+    Doc <--> Gateway
+    Phar <--> Gateway
     Gateway <--> DB
     Gateway --> M2
     Gateway --> M3
     Chat --> M4
     Surge --> M5
-    M5 -->|/topic/pharmacy/alerts/{pincode}| WS
-    WS --> Phar
+    M5 -->|"STOMP Outbreak Alert"| WS
+    WS -->|"Live Alert Stream"| Phar
 ```
 
 ---
