@@ -1,0 +1,27 @@
+{
+  "name": "smart-telehealth-platform",
+  "version": "1.0.0",
+  "description": "Integrated Smart Telehealth, Clinical AI Scribe, Multilingual Assistant & Regional Pharmacy Alert System",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "modules/*"
+  ],
+  "scripts": {
+    "start:backend": "cd services/api-backend && npm run dev",
+    "start:ai": "cd services/ai-service && uvicorn app:app --host 0.0.0.0 --port 8000 --reload",
+    "start:frontend": "cd services/web-frontend && npm run dev",
+    "test": "echo \"Running test suites across modules...\" && npm run test --workspaces --if-present"
+  },
+  "keywords": [
+    "telehealth",
+    "clinical-ai-scribe",
+    "multilingual-rag",
+    "pharmacy-surge-alerts",
+    "webrtc-jitsi",
+    "assemblyai",
+    "gemini"
+  ],
+  "author": "Smart Telehealth Platform Team",
+  "license": "ISC"
+}
