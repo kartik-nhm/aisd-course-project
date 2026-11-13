@@ -163,18 +163,27 @@ router.post('/message', async (req, res) => {
       // Broadcast alert over STOMP WebSocket
       const stompBroker = getStompBroker(req);
       if (stompBroker) {
-        const payload = JSON.stringify({
-          type: 'SURGE_ALERT',
-          pincode: matchingAlert.pincode,
-          condition: matchingAlert.condition,
-          queryCount: matchingAlert.queryCount,
-          threshold: matchingAlert.threshold,
-          severity: matchingAlert.severity,
-          recommendedMedicines: matchingAlert.recommendedMedicines,
-          timestamp: new Date().toISOString(),
-        });
-        stompBroker.broadcast(`/topic/pharmacy/alerts/${matchingAlert.pincode}`, payload);
-        stompBroker.broadcast('/topic/pharmacy/alerts', payload);
+        try {
+          const payload = JSON.stringify({
+            type: 'SURGE_ALERT',
+            pincode: matchingAlert.pincode,
+            condition: matchingAlert.condition,
+            queryCount: matchingAlert.queryCount,
+            threshold: matchingAlert.threshold,
+            severity: matchingAlert.severity,
+            recommendedMedicines: matchingAlert.recommendedMedicines,
+            timestamp: new Date().toISOString(),
+          });
+          if (typeof stompBroker.broadcastToTopic === 'function') {
+            stompBroker.broadcastToTopic(`/topic/pharmacy/alerts/${matchingAlert.pincode}`, payload);
+            stompBroker.broadcastToTopic('/topic/pharmacy/alerts', payload);
+          } else if (typeof stompBroker.broadcast === 'function') {
+            stompBroker.broadcast(`/topic/pharmacy/alerts/${matchingAlert.pincode}`, payload);
+            stompBroker.broadcast('/topic/pharmacy/alerts', payload);
+          }
+        } catch (wsErr) {
+          console.warn('[ChatRoute] WebSocket broadcast warning:', wsErr.message);
+        }
       }
 
       // Record alert in PharmacyAlert collection

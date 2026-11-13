@@ -262,6 +262,10 @@ class TelehealthStompBroker {
       }
     }
   }
+
+  broadcast(topic, payload) {
+    return this.broadcastToTopic(topic, payload);
+  }
 }
 
 module.exports = {
