@@ -338,6 +338,74 @@ const CLINICAL_KNOWLEDGE_BASE = {
       redFlags: ['Jwarada jothe vegada tholi daddu mathu gaaligala (severe drug reaction).', 'Tholi daddu + sandhi novu + mukhadalli kempu (lupus).', '2 varavaraige hepadilla hoppala.'],
     },
   },
+  menstruation: {
+    en: {
+      summary: 'Menstrual cramps (dysmenorrhea) are caused by uterine contractions driven by prostaglandins. Mild-to-moderate cramping is normal during the first 1–2 days of your period.',
+      homeCare: [
+        'Apply a heating pad or warm water bottle to your lower abdomen for 15–20 minutes.',
+        'Gentle yoga stretches (child\'s pose, cat-cow) relieve pelvic tension.',
+        'Stay hydrated — dehydration worsens cramping.',
+        'Avoid caffeine and salty foods which cause bloating and worsen cramps.',
+        'Light walking or low-intensity exercise reduces prostaglandin levels naturally.',
+      ],
+      otcMedicines: [
+        'Ibuprofen 400mg every 6–8 hours with food (most effective — anti-prostaglandin).',
+        'Mefenamic acid 500mg TDS for 3 days if cramps are severe (take from day 1).',
+        'Paracetamol 650mg if Ibuprofen is not tolerated.',
+        'Buscopan (hyoscine) for spasmodic cramps and abdominal bloating.',
+      ],
+      redFlags: [
+        'Severe cramping unresponsive to NSAIDs lasting more than 3 days (possible endometriosis).',
+        'Heavy bleeding soaking more than 1 pad per hour for 2 consecutive hours.',
+        'Fever above 101°F with pelvic pain (possible pelvic infection — seek emergency care).',
+        'Pain during intercourse or between periods — gynaecology review needed.',
+      ],
+    },
+    hi: {
+      summary: 'Masik dharm (period) ke dard ko dysmenorrhea kehte hain. Yeh uterus mein prostaglandin ke karan hone wale sankuchan se hota hai. Pehle 1–2 din mein halka dard normal hai.',
+      homeCare: [
+        'Pait ke nichle hisse par warm water bottle ya heating pad 20 minute rakhein.',
+        'Hafif yoga — child\'s pose aur cat-cow stretch se dard mein rahat milti hai.',
+        'Khub paani piyein — dehyadration se dard barhta hai.',
+        'Chai, coffee aur namkeen khane se bachein.',
+        'Halki walk karo — prostaglandin ka level ghata deti hai.',
+      ],
+      otcMedicines: [
+        'Ibuprofen 400mg khana khake 6–8 ghante mein (sabse asar-dar).',
+        'Mefenamic acid 500mg teen baar 3 din tak (zyada dard ke liye).',
+        'Paracetamol 650mg agar Ibuprofen na le sakein.',
+        'Buscopan spasm aur pet phoolapan ke liye.',
+      ],
+      redFlags: [
+        'Teen din se zyada agar dawa kaam na kare (endometriosis possible).',
+        'Zyada bleeding — 2 ghante mein ek se zyada pad bhijana.',
+        'Pelvic dard ke saath bukhar — turant doctor ke paas jaayein.',
+        'Sambhog ke dauran ya beech mein dard — gynaecology check karwaayein.',
+      ],
+    },
+    kn: {
+      summary: 'Masika dharma (period) novu (dysmenorrhea) uterus sankochanadinda aguttade. Modala 1–2 dinadalli swalpa novu samanyavaagide.',
+      homeCare: [
+        'Kelage hotte mele bisi neeru bottle ittukoli 20 nimisha.',
+        'Swalpa yoga — child\'s pose, cat-cow novu kommu maaduttade.',
+        'Dhaaralavagi neeru kudiyiri — dehydration novu hechisuttade.',
+        'Coffee, chai mattu uppu adike adige beda.',
+        'Nidhanavagi nadeyiri — prostaglandin kammi aguttade.',
+      ],
+      otcMedicines: [
+        'Ibuprofen 400mg oota aadag 6–8 gandege (anukula).',
+        'Mefenamic acid 500mg muru saari 3 dinagalige.',
+        'Paracetamol 650mg Ibuprofen saadhya illa andre.',
+        'Buscopan spasm mattu ubbara ge.',
+      ],
+      redFlags: [
+        '3 dinagaliginta hechhu dawa kaela madidare (endometriosis).',
+        '2 gandeyalli ondakkintha hechhu pad thitta aguttidare.',
+        'Pelvic novu jothe jwara — turane hospital ge hogi.',
+        'Sambhogada samaye novu — gynaecology nodisi.',
+      ],
+    },
+  },
 };
 
 const STATUTORY_DISCLAIMER =
@@ -387,6 +455,14 @@ function resolveConditionFromQuery(text) {
     lower.includes('headache') || lower.includes('sar dard') || lower.includes('tale novu') ||
     lower.includes('migraine') || lower.includes('head pain') || lower.includes('head ache')
   ) return 'headache';
+
+  // Menstrual cramps / period pain — BEFORE stomach check
+  if (
+    lower.includes('menstruat') || lower.includes('period') || lower.includes('periods') ||
+    lower.includes('dysmenorrhea') || lower.includes('menstrual') || lower.includes('masik') ||
+    lower.includes('menses') || lower.includes('time of month') || lower.includes('monthly') ||
+    lower.includes('uterus cramp') || lower.includes('period pain') || lower.includes('period cramp')
+  ) return 'menstruation';
 
   // Stomach / GI
   if (
