@@ -16,7 +16,7 @@ const { env } = require('../config/env');
 // Import Domain Modules
 const { createConsultationRoom, DoctorAvailabilityRegistry } = require('../../../../modules/telehealth-signaling');
 const { processConsultationAudio, extractClinicalEntities, classifyConsultationSeverity } = require('../../../../modules/clinical-ai-scribe');
-const { compilePrescriptionPDF, sanitizePrescriptionItems } = require('../../../../modules/prescription-generator');
+const { compilePrescriptionPDF, sanitizePrescriptionItems, checkDrugAllergyConflict } = require('../../../../modules/prescription-generator');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024 } }); // 30MB audio limit
@@ -302,6 +302,19 @@ router.get('/prescription/pdf/:consultationId', async (req, res) => {
     return res.send(pdfBuffer);
   } catch (error) {
     console.error('[ConsultationRoute] PDF Generation error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Cross-match patient allergies with prescribed medications (Module 3 Safety Engine).
+ */
+router.post('/check-allergy-conflict', (req, res) => {
+  try {
+    const { patientAllergies = '', prescribedMedicines = [] } = req.body;
+    const analysis = checkDrugAllergyConflict(patientAllergies, prescribedMedicines);
+    return res.json({ success: true, ...analysis });
+  } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
