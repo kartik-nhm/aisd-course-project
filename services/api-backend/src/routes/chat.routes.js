@@ -236,21 +236,26 @@ router.post('/message', async (req, res) => {
       };
     }
 
-    // Assemble rich formatted reply
-    let replyText = `**${entry.summary}**\n\n`;
-    replyText += `**Care Guidance & Home Remedies:**\n`;
-    entry.homeCare.forEach((item) => {
-      replyText += `• ${item}\n`;
-    });
-    replyText += `\n**Recommended Over-The-Counter Options:**\n`;
-    entry.otcMedicines.forEach((item) => {
-      replyText += `• ${item}\n`;
-    });
-    replyText += `\n**🚨 Red Flag Warning Signs (Seek Immediate Medical Care):**\n`;
-    entry.redFlags.forEach((item) => {
-      replyText += `• ${item}\n`;
-    });
-    replyText += `\n\n_${STATUTORY_DISCLAIMER}_`;
+    // Assemble structured reply as JSON sections (frontend renders these properly)
+    const replyText = entry.summary;
+    const replySections = [
+      {
+        heading: 'Care Guidance & Home Remedies',
+        icon: 'home',
+        items: entry.homeCare,
+      },
+      {
+        heading: 'Recommended Over-The-Counter Options',
+        icon: 'pill',
+        items: entry.otcMedicines,
+      },
+      {
+        heading: 'Red Flag Warning Signs',
+        icon: 'alert',
+        subtext: 'Seek immediate medical care if you notice:',
+        items: entry.redFlags,
+      },
+    ];
 
     // Asynchronously log query to ChatQueryLog for regional surveillance
     await ChatQueryLog.create({
@@ -320,6 +325,8 @@ router.post('/message', async (req, res) => {
 
     return res.json({
       answer: replyText,
+      sections: replySections,
+      disclaimer: STATUTORY_DISCLAIMER,
       detected_language: activeLang,
       detected_script: detectedScript,
       detected_condition: condition,
