@@ -162,20 +162,17 @@ export default function PharmacyAlertsPage() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
         {/* Top Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800 pb-6">
+        <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-slate-800 pb-6">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30 font-mono">
-                Module 5: Regional Pharmacy Early Alert System
-              </span>
+            <div className="flex items-center gap-2 mb-2">
               <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${isConnected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
                 <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                <span>{isConnected ? 'STOMP WebSocket Live' : 'Connecting STOMP...'}</span>
+                <span>{isConnected ? 'STOMP WebSocket Connected' : 'Connecting STOMP...'}</span>
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-white mt-2 tracking-tight">Regional Pharmacy Surge Surveillance</h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Proactive disease outbreak detection aggregated from multilingual patient consultations & chatbot queries.
+            <h1 className="text-2xl font-bold text-white tracking-tight">Regional Pharmacy Surge Surveillance</h1>
+            <p className="text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
+              Proactive disease outbreak detection aggregated from multilingual patient consultations and regional query surveillance.
             </p>
           </div>
 

@@ -125,26 +125,24 @@ Please select your regional pincode so we can provide localized care and monitor
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 flex flex-col">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-6 border-b border-slate-800 gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-amber-400 uppercase tracking-widest">
-              <MessageSquare className="w-3.5 h-3.5" />
-              Module 4: Multilingual RAG Medical Chatbot
-            </div>
-            <h1 className="text-2xl font-bold text-white mt-1">Vernacular Clinical AI Assistant</h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Supports Romanized Hindi (Hinglish), Romanized Kannada (Kanglish), and English with automated regional disease surveillance.
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              Vernacular Clinical AI Assistant
+            </h1>
+            <p className="text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
+              Medical intelligence supporting Romanized Hindi (Hinglish), Romanized Kannada (Kanglish), and English with automated disease surveillance.
             </p>
           </div>
 
           {/* Regional Pincode Selector */}
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-xs">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl text-xs">
             <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
-            <span className="text-slate-400 font-medium">Region Pincode:</span>
+            <span className="text-slate-400 font-medium">Regional Postal Code:</span>
             <select
               value={pincode}
               onChange={(e) => setPincode(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded px-2 py-0.5 text-white font-mono text-xs focus:outline-none"
+              className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-white font-mono text-xs focus:outline-none"
             >
               <option value="560001">560001 (Bangalore Central)</option>
               <option value="560038">560038 (Indira Nagar)</option>

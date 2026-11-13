@@ -83,95 +83,146 @@ function normalizeClinicalData(raw) {
 }
 
 /**
- * Heuristic clinical entity parser used when Gemini API key is not configured.
+ * Heuristic clinical entity parser used when Gemini API key is not configured or offline.
+ * Dynamically extracts symptoms, vitals, diagnosis, and medications from dialogue transcripts.
  */
 function heuristicClinicalExtraction(transcript) {
   const text = String(transcript || '');
 
-  // Extract Symptoms
+  // 1. Dynamic Extraction of Symptoms
   const commonSymptoms = [
-    'high fever', 'fever', 'dry cough', 'cough', 'body aches', 'headache',
-    'scratchy throat', 'sore throat', 'fatigue', 'chills', 'runny nose',
-    'chest congestion', 'nausea', 'vomiting', 'diarrhea', 'joint pain'
+    'high fever', 'fever', 'dry cough', 'productive cough', 'cough', 'body aches', 'headache',
+    'scratchy throat', 'sore throat', 'fatigue', 'chills', 'runny nose', 'nasal congestion',
+    'chest congestion', 'chest tightness', 'shortness of breath', 'wheezing',
+    'nausea', 'vomiting', 'diarrhea', 'joint pain', 'muscle pain', 'abdominal pain',
+    'epigastric pain', 'stomach ache', 'acid reflux', 'heartburn', 'skin rash', 'itching',
+    'retro-orbital pain', 'eye pain', 'weakness', 'loss of appetite', 'dizziness'
   ];
+
   const detectedSymptoms = [];
   for (const s of commonSymptoms) {
     if (new RegExp(`\\b${s}\\b`, 'i').test(text)) {
-      detectedSymptoms.push(s.charAt(0).toUpperCase() + s.slice(1));
+      detectedSymptoms.push(s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
     }
   }
 
-  // Extract Vitals
+  // Also extract dynamic complaints from dialogue if present
+  const complaintMatch = text.match(/(?:complaining of|suffering from|symptoms of|have had|experiencing)\s+([^.\n]+)/i);
+  if (complaintMatch && complaintMatch[1]) {
+    const rawComplaints = complaintMatch[1].split(/,|\band\b/).map(c => c.trim()).filter(Boolean);
+    for (const c of rawComplaints) {
+      if (c.length > 2 && c.length < 40 && !detectedSymptoms.some(ds => ds.toLowerCase() === c.toLowerCase())) {
+        detectedSymptoms.push(c.charAt(0).toUpperCase() + c.slice(1));
+      }
+    }
+  }
+
+  // 2. Dynamic Extraction of Vitals
   const bpMatch = text.match(/\b\d{2,3}\/\d{2,3}(?:\s*mmHg)?\b/i);
   const tempMatch = text.match(/\b\d{2,3}(?:\.\d)?\s*°?[FC]\b/i);
-  const spo2Match = text.match(/\b\d{2,3}\s*%/i);
-  const pulseMatch = text.match(/\bpulse is\s*(\d{2,3})\s*(?:bpm)?\b/i) || text.match(/\b(\d{2,3})\s*bpm\b/i);
+  const spo2Match = text.match(/\b(?:spo2|o2 sat|saturation)?\s*[:=]?\s*(\d{2,3})\s*%/i);
+  const pulseMatch = text.match(/\bpulse(?:\s+is)?\s*[:=]?\s*(\d{2,3})\s*(?:bpm)?\b/i) || text.match(/\b(\d{2,3})\s*bpm\b/i);
 
-  // Extract Diagnosis
-  let detectedDiagnosis = ['Acute Upper Respiratory Tract Infection (Viral)'];
-  if (/dengue/i.test(text)) detectedDiagnosis = ['Suspected Dengue Viral Infection'];
-  else if (/malaria/i.test(text)) detectedDiagnosis = ['Suspected Malaria'];
-  else if (/bronchitis/i.test(text)) detectedDiagnosis = ['Acute Bronchitis'];
-  else if (/gastritis|acidity/i.test(text)) detectedDiagnosis = ['Acute Gastritis / Reflux'];
+  // 3. Dynamic Extraction of Diagnosis
+  let detectedDiagnosis = [];
+  const explicitDiag = text.match(/(?:diagnosing|diagnosis|assessment|diagnosed with)\s*[:\-]?\s*([^.\n]+)/i);
+  if (explicitDiag && explicitDiag[1] && explicitDiag[1].trim().length > 3) {
+    detectedDiagnosis.push(explicitDiag[1].trim());
+  } else if (/dengue/i.test(text)) {
+    detectedDiagnosis.push('Suspected Dengue Viral Infection');
+  } else if (/malaria/i.test(text)) {
+    detectedDiagnosis.push('Suspected Malaria');
+  } else if (/bronchitis/i.test(text)) {
+    detectedDiagnosis.push('Acute Bronchitis');
+  } else if (/gastritis|acidity|gerd|acid reflux/i.test(text)) {
+    detectedDiagnosis.push('Acute Gastritis / Reflux Disorder');
+  } else if (/pharyngitis|tonsillitis/i.test(text)) {
+    detectedDiagnosis.push('Acute Pharyngotonsillitis (Bacterial)');
+  } else if (/migraine/i.test(text)) {
+    detectedDiagnosis.push('Acute Migraine Episode');
+  } else if (/urinary|uti/i.test(text)) {
+    detectedDiagnosis.push('Urinary Tract Infection');
+  } else if (/hypertension|high bp/i.test(text)) {
+    detectedDiagnosis.push('Essential Hypertension (Stage 1)');
+  } else {
+    detectedDiagnosis.push('Acute Upper Respiratory Tract Infection (Viral)');
+  }
 
-  // Extract Prescriptions
+  // 4. Dynamic Prescription Extraction
   const prescription = [];
-  if (/paracetamol/i.test(text)) {
-    prescription.push({
-      medicine: 'Paracetamol',
-      dosage: '650mg',
-      frequency: 'TDS',
-      duration: '3 days',
-      instructions: 'After meals',
-    });
-  }
-  if (/cetirizine/i.test(text)) {
-    prescription.push({
-      medicine: 'Cetirizine',
-      dosage: '10mg',
-      frequency: 'OD',
-      duration: '5 days',
-      instructions: 'At bedtime',
-    });
-  }
-  if (/saline/i.test(text)) {
-    prescription.push({
-      medicine: 'Saline Nasal Spray',
-      dosage: '2 puffs',
-      frequency: 'BD',
-      duration: '5 days',
-      instructions: 'Both nostrils',
-    });
-  }
-  if (/ors/i.test(text)) {
-    prescription.push({
-      medicine: 'ORS Electral Sachets',
-      dosage: '1 sachet',
-      frequency: 'SOS',
-      duration: 'As needed',
-      instructions: 'Dissolve in 1L boiled water',
-    });
+
+  // Catalog of known therapeutic medications and clinical dosages
+  const drugCatalog = [
+    { regex: /amoxicillin|amoxil/i, medicine: 'Amoxicillin', dosage: '500mg', frequency: 'TDS (Three times daily)', duration: '5 days', instructions: 'After meals' },
+    { regex: /augmentin|amoxiclav/i, medicine: 'Augmentin (Amoxicillin + Clavulanate)', dosage: '625mg', frequency: 'BD (Twice daily)', duration: '5 days', instructions: 'After food' },
+    { regex: /azithromycin|zithromax/i, medicine: 'Azithromycin', dosage: '500mg', frequency: 'OD (Once daily)', duration: '3 days', instructions: '1 hour before food' },
+    { regex: /paracetamol|dolo|calpol/i, medicine: 'Paracetamol', dosage: '650mg', frequency: 'TDS (Three times daily)', duration: '3 days', instructions: 'After meals' },
+    { regex: /ibuprofen|brufen/i, medicine: 'Ibuprofen', dosage: '400mg', frequency: 'BD (Twice daily)', duration: '3 days', instructions: 'After meals with full glass of water' },
+    { regex: /combiflam/i, medicine: 'Combiflam (Ibuprofen + Paracetamol)', dosage: '1 tablet', frequency: 'SOS (When needed)', duration: '3 days', instructions: 'Strictly after food' },
+    { regex: /aspirin|ecosprin/i, medicine: 'Aspirin (Dispirin)', dosage: '75mg', frequency: 'OD (Once daily)', duration: '7 days', instructions: 'After breakfast' },
+    { regex: /bactrim|septra|cotrimoxazole/i, medicine: 'Bactrim (Trimethoprim-Sulfamethoxazole)', dosage: '960mg', frequency: 'BD (Twice daily)', duration: '5 days', instructions: 'With plenty of water' },
+    { regex: /cetirizine|zyrtec/i, medicine: 'Cetirizine', dosage: '10mg', frequency: 'OD (Once daily)', duration: '5 days', instructions: 'At bedtime' },
+    { regex: /levocetirizine|montelukast|montair/i, medicine: 'Montelukast + Levocetirizine', dosage: '10mg/5mg', frequency: 'OD (Once daily)', duration: '7 days', instructions: 'At bedtime' },
+    { regex: /pantoprazole|pan 40/i, medicine: 'Pantoprazole', dosage: '40mg', frequency: 'OD (Once daily)', duration: '7 days', instructions: 'Morning before breakfast' },
+    { regex: /omeprazole|omez/i, medicine: 'Omeprazole', dosage: '20mg', frequency: 'OD (Once daily)', duration: '7 days', instructions: 'Morning empty stomach' },
+    { regex: /ciprofloxacin|ciplox/i, medicine: 'Ciprofloxacin', dosage: '500mg', frequency: 'BD (Twice daily)', duration: '5 days', instructions: 'After meals' },
+    { regex: /cefixime|taxim/i, medicine: 'Cefixime', dosage: '200mg', frequency: 'BD (Twice daily)', duration: '5 days', instructions: 'After food' },
+    { regex: /cephalexin|keflex/i, medicine: 'Cephalexin', dosage: '500mg', frequency: 'QID (Four times daily)', duration: '5 days', instructions: 'With meals' },
+    { regex: /saline/i, medicine: 'Saline Nasal Spray', dosage: '2 puffs', frequency: 'BD (Twice daily)', duration: '5 days', instructions: 'Both nostrils' },
+    { regex: /ors|electral/i, medicine: 'ORS Electral Sachets', dosage: '1 sachet', frequency: 'SOS', duration: 'As needed', instructions: 'Dissolve in 1L boiled water' },
+    { regex: /cough syrup|benadryl|grilinctus/i, medicine: 'Cough Expectorant Syrup', dosage: '10ml', frequency: 'TDS (Three times daily)', duration: '5 days', instructions: 'After meals' },
+  ];
+
+  for (const item of drugCatalog) {
+    if (item.regex.test(text)) {
+      prescription.push({
+        medicine: item.medicine,
+        dosage: item.dosage,
+        frequency: item.frequency,
+        duration: item.duration,
+        instructions: item.instructions,
+      });
+    }
   }
 
+  // Also check for dynamic explicit prescription statements: e.g. "Prescribing XYZ 500mg TDS"
+  const rxMatches = text.matchAll(/(?:prescribe|prescribing|take)\s+([A-Za-z0-9\-\+]+)\s*(\d+\s*(?:mg|ml|mcg|puff|sachet)?)?\s*(OD|BD|TDS|QID|SOS)?/gi);
+  for (const match of rxMatches) {
+    const medCandidate = match[1];
+    if (medCandidate && medCandidate.length > 2 && !['rest', 'fluids', 'water', 'steam', 'food', 'care', 'warm'].includes(medCandidate.toLowerCase())) {
+      const alreadyAdded = prescription.some(p => p.medicine.toLowerCase().includes(medCandidate.toLowerCase()));
+      if (!alreadyAdded) {
+        prescription.push({
+          medicine: medCandidate.charAt(0).toUpperCase() + medCandidate.slice(1),
+          dosage: match[2]?.trim() || 'Standard Dose',
+          frequency: match[3]?.toUpperCase() || 'BD (Twice daily)',
+          duration: '5 days',
+          instructions: 'As directed by physician',
+        });
+      }
+    }
+  }
+
+  // Fallback default prescription if nothing matched
   if (prescription.length === 0) {
     prescription.push({
       medicine: 'Paracetamol',
       dosage: '650mg',
-      frequency: 'TDS',
+      frequency: 'TDS (Three times daily)',
       duration: '3 days',
       instructions: 'After meals',
     });
   }
 
   return normalizeClinicalData({
-    symptoms: detectedSymptoms.length > 0 ? detectedSymptoms : ['Fever', 'Fatigue'],
+    symptoms: detectedSymptoms.length > 0 ? detectedSymptoms : ['Mild fever', 'General fatigue'],
     diagnosis: detectedDiagnosis,
     prescription,
     vitals: {
       bloodPressure: bpMatch ? bpMatch[0] : '120/80 mmHg',
-      pulse: pulseMatch ? (pulseMatch[1] || pulseMatch[0]) : '78 bpm',
+      pulse: pulseMatch ? (pulseMatch[1] ? `${pulseMatch[1]} bpm` : pulseMatch[0]) : '78 bpm',
       temperature: tempMatch ? tempMatch[0] : '100.8°F',
-      spo2: spo2Match ? spo2Match[0] : '98%',
+      spo2: spo2Match ? (spo2Match[1] ? `${spo2Match[1]}%` : spo2Match[0]) : '98%',
     },
     lifestyle_advice: [
       'Maintain adequate oral hydration (minimum 2.5 to 3 liters/day)',

@@ -47,7 +47,7 @@ function heuristicTriage(data) {
   const text = typeof data === 'string' ? data : JSON.stringify(data || '');
 
   // Critical indicators
-  if (/chest pain|unresponsive|stroke|facial drooping|severe hemorrhage|cardiac arrest|cyanosis/i.test(text)) {
+  if (/chest pain|unresponsive|stroke|facial drooping|severe hemorrhage|cardiac arrest|cyanosis|anaphylaxis/i.test(text)) {
     return {
       severity: SEVERITY_LEVELS.CRITICAL,
       rationale: 'Severe emergency symptoms requiring immediate emergency hospital evaluation.',
@@ -55,11 +55,11 @@ function heuristicTriage(data) {
     };
   }
 
-  // High indicators: SpO2 < 93% or temp > 103F or disorientation or dengue bleeding
-  if (/spo2.*?(?:8\d|9[0-2])%|temperature.*?(?:10[3-6]|107)|disorientation|bleeding/i.test(text)) {
+  // High indicators: SpO2 < 93% or temp >= 103F or dengue or platelet or bleeding or severe asthma
+  if (/spo2.*?(?:8\d|9[0-2])%|temperature.*?(?:10[3-6]|107)|103|104|dengue|platelet|disorientation|bleeding|severe wheezing|asthma attack/i.test(text)) {
     return {
       severity: SEVERITY_LEVELS.HIGH,
-      rationale: 'Abnormal vitals or acute severe symptoms requiring prompt in-person clinical attention.',
+      rationale: 'Abnormal vitals or acute severe symptoms requiring prompt in-person clinical attention within 4 hours.',
       recommendedUrgencyHours: 4,
     };
   }

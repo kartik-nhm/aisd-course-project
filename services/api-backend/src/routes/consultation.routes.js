@@ -111,11 +111,19 @@ Doctor: I am prescribing Paracetamol 650mg TDS for 3 days, Cetirizine 10mg OD at
     // 4-level triage classification
     const triage = await classifyConsultationSeverity(clinicalData, env.GOOGLE_API_KEY, env.GEMINI_MODEL);
 
+    // Cross-reference patient allergy profile if provided or on record
+    let allergyAnalysis = { hasConflict: false, conflicts: [] };
+    const patientAllergies = req.body.patientAllergies || (await Patient.findOne({ phone: patientPhone }))?.allergies || '';
+    if (patientAllergies && clinicalData.prescription?.length > 0) {
+      allergyAnalysis = checkDrugAllergyConflict(patientAllergies, clinicalData.prescription);
+    }
+
     return res.json({
       success: true,
       transcript: sampleDialogue,
       clinicalData,
       triage,
+      allergyAnalysis,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
