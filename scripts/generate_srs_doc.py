@@ -34,7 +34,8 @@ from docx_styler import (
     add_technical_card,
 )
 
-OUTPUT_PATH = "/Users/kartiknhm/Downloads/SRS_Table_of_Contents.docx"
+OUTPUT_PATH = sys.argv[1] if len(sys.argv) > 1 else "/Users/kartiknhm/Downloads/SRS_Table_of_Contents-2.docx"
+DOCS_SYNC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../docs/Software_Requirements_Specification.docx"))
 
 
 def add_h2(doc: docx.Document, title: str, space_before: float = 12.0, space_after: float = 4.0):
@@ -647,12 +648,12 @@ def generate_srs():
         "Maps high-level business goals and functional requirements to implemented software modules, service runtimes, and automated verification tests:",
     )
     rtm_data = [
-        ["FR-1.1 to FR-1.5", "Live Telehealth Video Consultations", "modules/telehealth-signaling", "tests/verify_modules.js (Test 4)", "Accept"],
-        ["FR-2.1 to FR-2.6", "Clinical AI Scribe & 4-Level Triage", "modules/clinical-ai-scribe", "tests/verify_modules.js (Test 3)", "Accept"],
-        ["FR-3.1 to FR-3.5", "Automated jsPDF Prescription Generator", "modules/prescription-generator", "tests/verify_modules.js (Test 2)", "Accept"],
-        ["FR-4.1 to FR-4.6", "Multilingual Chatbot & Query Tagging", "modules/multilingual-chatbot", "tests/verify_ai_module.py", "Accept"],
-        ["FR-5.1 to FR-5.6", "Regional Pharmacy Early Alert System", "modules/pharmacy-alerts", "tests/verify_modules.js (Test 1)", "Accept"],
-        ["NFR-1.1 to NFR-1.6", "Sub-second Latency & High Throughput", "services/api-backend & ai-service", "services/api-backend/server.js", "Accept"],
+        ["FR-1.1 to FR-1.5", "Live Telehealth Video Consultations & Signaling", "modules/telehealth-signaling & /patient/consultation", "tests/verify_milestone_50.js (Test 1)", "Accept"],
+        ["FR-2.1 to FR-2.6", "Clinical AI Scribe & 4-Level Triage Engine", "modules/clinical-ai-scribe & /doctor/queue", "tests/verify_milestone_50.js (Test 2)", "Accept"],
+        ["FR-3.1 to FR-3.5", "Automated jsPDF Prescription & Allergy Safety", "modules/prescription-generator & /patient/records", "tests/verify_milestone_50.js (Test 3)", "Accept"],
+        ["FR-4.1 to FR-4.6", "Multilingual Chatbot & Query Tagging", "modules/multilingual-chatbot & /patient/chat", "tests/verify_milestone_50.js (Test 4)", "Accept"],
+        ["FR-5.1 to FR-5.6", "Regional Pharmacy Early Alert System", "modules/pharmacy-alerts & /pharmacy/alerts", "tests/verify_milestone_50.js (Test 5)", "Accept"],
+        ["NFR-1.1 to NFR-1.6", "Sub-second Latency & High Throughput", "services/api-backend & inMemoryStore", "tests/verify_milestone_50.js (Test 6)", "Accept"],
         ["NFR-5.1 to NFR-5.3", "HIPAA & Telemedicine Regulations", "services/api-backend/src/middleware", "auth.js & roleGuard", "Accept"],
     ]
     build_table(
@@ -667,6 +668,11 @@ def generate_srs():
     # Save document
     print(f"Saving completed SRS document to: {OUTPUT_PATH}")
     doc.save(OUTPUT_PATH)
+    try:
+        doc.save(DOCS_SYNC_PATH)
+        print(f"✓ Synchronized SRS copy to: {DOCS_SYNC_PATH}")
+    except Exception as e:
+        print(f"Notice on docs sync: {e}")
     print("✓ Successfully generated and saved SRS document!")
 
 
