@@ -11,7 +11,9 @@
     "start:backend": "cd services/api-backend && npm run dev",
     "start:ai": "cd services/ai-service && uvicorn app:app --host 0.0.0.0 --port 8000 --reload",
     "start:frontend": "cd services/web-frontend && npm run dev",
-    "test": "echo \"Running test suites across modules...\" && npm run test --workspaces --if-present"
+    "test": "node tests/verify_milestone_50.js && node tests/verify_modules.js",
+    "test:milestone": "node tests/verify_milestone_50.js",
+    "seed": "node scripts/seed_demo_data.js"
   },
   "keywords": [
     "telehealth",

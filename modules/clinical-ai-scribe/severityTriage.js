@@ -40,9 +40,52 @@ function parseTriageJson(text) {
   }
 }
 
-async function classifyConsultationSeverity(transcript, apiKey, model = 'gemini-2.5-flash') {
+/**
+ * Heuristic clinical triage based on vitals and symptoms
+ */
+function heuristicTriage(data) {
+  const text = typeof data === 'string' ? data : JSON.stringify(data || '');
+
+  // Critical indicators
+  if (/chest pain|unresponsive|stroke|facial drooping|severe hemorrhage|cardiac arrest|cyanosis/i.test(text)) {
+    return {
+      severity: SEVERITY_LEVELS.CRITICAL,
+      rationale: 'Severe emergency symptoms requiring immediate emergency hospital evaluation.',
+      recommendedUrgencyHours: 1,
+    };
+  }
+
+  // High indicators: SpO2 < 93% or temp > 103F or disorientation or dengue bleeding
+  if (/spo2.*?(?:8\d|9[0-2])%|temperature.*?(?:10[3-6]|107)|disorientation|bleeding/i.test(text)) {
+    return {
+      severity: SEVERITY_LEVELS.HIGH,
+      rationale: 'Abnormal vitals or acute severe symptoms requiring prompt in-person clinical attention.',
+      recommendedUrgencyHours: 4,
+    };
+  }
+
+  // Medium indicators: fever, bronchitis, severe cough
+  if (/fever|cough|bronchitis|vomiting|infection/i.test(text)) {
+    return {
+      severity: SEVERITY_LEVELS.MEDIUM,
+      rationale: 'Active symptomatic infection with stable hemodynamic markers; routine medical monitoring.',
+      recommendedUrgencyHours: 24,
+    };
+  }
+
+  // Default Low
+  return {
+    severity: SEVERITY_LEVELS.LOW,
+    rationale: 'Mild localized symptoms with reassuring physiological vitals.',
+    recommendedUrgencyHours: 48,
+  };
+}
+
+async function classifyConsultationSeverity(input, apiKey, model = 'gemini-2.5-flash') {
+  const transcriptText = typeof input === 'object' && input !== null ? (input.transcript || JSON.stringify(input)) : String(input || '');
+
   if (!apiKey) {
-    return { severity: SEVERITY_LEVELS.MEDIUM, rationale: 'API key omitted; defaulted to routine review', recommendedUrgencyHours: 24 };
+    return heuristicTriage(input);
   }
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -52,7 +95,7 @@ async function classifyConsultationSeverity(transcript, apiKey, model = 'gemini-
       {
         parts: [
           { text: TRIAGE_PROMPT },
-          { text: `CONSULTATION DATA:\n${transcript}` },
+          { text: `CONSULTATION DATA:\n${transcriptText}` },
         ],
       },
     ],
@@ -69,7 +112,7 @@ async function classifyConsultationSeverity(transcript, apiKey, model = 'gemini-
     });
 
     if (!response.ok) {
-      return { severity: SEVERITY_LEVELS.MEDIUM, rationale: 'Evaluation service fallback', recommendedUrgencyHours: 24 };
+      return heuristicTriage(input);
     }
 
     const data = await response.json();
@@ -87,11 +130,12 @@ async function classifyConsultationSeverity(transcript, apiKey, model = 'gemini-
     };
   } catch (err) {
     console.error('[SeverityTriage] Error classifying consultation:', err.message);
-    return { severity: SEVERITY_LEVELS.MEDIUM, rationale: 'Network fallback', recommendedUrgencyHours: 24 };
+    return heuristicTriage(input);
   }
 }
 
 module.exports = {
   classifyConsultationSeverity,
+  heuristicTriage,
   SEVERITY_LEVELS,
 };

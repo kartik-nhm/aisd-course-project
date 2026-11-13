@@ -5,6 +5,7 @@ const { env } = require('./config/env');
 const authRoutes = require('./routes/auth.routes');
 const consultationRoutes = require('./routes/consultation.routes');
 const pharmacyRoutes = require('./routes/pharmacy.routes');
+const chatRoutes = require('./routes/chat.routes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get('/health', (_req, res) => {
     status: 'online',
     service: 'smart-telehealth-api-gateway',
     version: '1.0.0',
+    milestone: '50% Complete (Gate 1 Baseline)',
     timestamp: new Date().toISOString(),
   });
 });
@@ -32,6 +34,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/consultation', consultationRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Compatibility alias
 app.use('/auth', authRoutes);

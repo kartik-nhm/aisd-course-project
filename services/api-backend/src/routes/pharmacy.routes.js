@@ -236,4 +236,75 @@ router.get('/inventory/deficit-check', async (req, res) => {
   }
 });
 
+/**
+ * Simulate surge queries for testing and demonstration.
+ */
+router.post('/simulate-surge', async (req, res) => {
+  try {
+    const { pincode = '560001', condition = 'fever', count = 5 } = req.body;
+    const normCond = normalizeCondition(condition);
+
+    for (let i = 0; i < count; i++) {
+      await ChatQueryLog.create({
+        queryText: `Simulated query #${i + 1} for ${normCond} symptoms in pincode ${pincode}`,
+        detectedCondition: normCond,
+        pincode: String(pincode).trim(),
+        detectedLanguage: 'English',
+        isVernacular: false,
+        userId: `sim-user-${i + 1}`,
+        createdAt: new Date(),
+      });
+    }
+
+    const alerts = await detectSurges({
+      ChatQueryLog,
+      threshold: env.PHARMACY_SURGE_THRESHOLD || 5,
+      windowHours: env.PHARMACY_SURGE_WINDOW_HOURS || 24,
+    });
+
+    const matchingAlert = alerts.find((a) => a.pincode === String(pincode).trim() && a.condition === normCond);
+
+    if (matchingAlert) {
+      const broker = getStompBroker(req);
+      if (broker) {
+        const payload = JSON.stringify({
+          type: 'SURGE_ALERT',
+          pincode: matchingAlert.pincode,
+          condition: matchingAlert.condition,
+          queryCount: matchingAlert.queryCount,
+          threshold: matchingAlert.threshold,
+          severity: matchingAlert.severity,
+          recommendedMedicines: matchingAlert.recommendedMedicines,
+          timestamp: new Date().toISOString(),
+        });
+        broker.broadcast(`/topic/pharmacy/alerts/${matchingAlert.pincode}`, payload);
+        broker.broadcast('/topic/pharmacy/alerts', payload);
+      }
+
+      await PharmacyAlert.create({
+        alertId: `alert-${matchingAlert.pincode}-${Date.now()}`,
+        pincode: matchingAlert.pincode,
+        condition: matchingAlert.condition,
+        queryCount: matchingAlert.queryCount,
+        threshold: matchingAlert.threshold,
+        severity: matchingAlert.severity,
+        recommendedMedicines: matchingAlert.recommendedMedicines,
+        status: 'ACTIVE',
+        createdAt: new Date(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      simulatedCount: count,
+      pincode,
+      condition: normCond,
+      surgeDetected: Boolean(matchingAlert),
+      alert: matchingAlert,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

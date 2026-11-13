@@ -19,14 +19,33 @@ const ESSENTIAL_MEDICINES_MAP = {
   gastroenteritis: ['ORS Electrolytes', 'Loperamide 2mg', 'Ondansetron 4mg', 'Probiotics'],
 };
 
+const VERNACULAR_SYNONYMS = {
+  fever: ['bukhar', 'jwara', 'jwar', 'taap', 'shivering', 'pyrexia'],
+  dengue: ['dengu', 'breakbone', 'platelet'],
+  malaria: ['thandi', 'chills'],
+  flu: ['khansi', 'kemmu', 'zukham', 'sardi', 'cough', 'cold'],
+  typhoid: ['motijhara', 'enteric fever'],
+  cholera: ['haiza', 'dast', 'loose motion'],
+};
+
 /**
- * Standardizes disease / condition names for aggregation.
+ * Standardizes disease / condition names for aggregation, supporting vernacular terms.
  */
 function normalizeCondition(condition) {
   const lower = String(condition || '').toLowerCase().trim();
+
+  // Check direct condition keys
   for (const key of Object.keys(ESSENTIAL_MEDICINES_MAP)) {
     if (lower.includes(key)) return key;
   }
+
+  // Check vernacular synonyms
+  for (const [key, synonyms] of Object.entries(VERNACULAR_SYNONYMS)) {
+    if (synonyms.some((syn) => lower.includes(syn))) {
+      return key;
+    }
+  }
+
   return lower || 'general-fever';
 }
 
